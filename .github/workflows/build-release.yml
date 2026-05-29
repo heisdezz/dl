@@ -53,11 +53,20 @@ jobs:
       - name: Make Gradlew executable
         run: chmod +x android/gradlew
 
+      - name: Generate dummy keystore
+        run: |
+          keytool -genkey -v -keystore dummy.keystore -alias dummy -keyalg RSA -keysize 2048 -validity 10000 -storepass password -keypass password -dname "CN=Dummy, OU=Dev, O=Dev, L=Unknown, S=Unknown, C=US"
+
       - name: Build release APK
         env:
           JAVA_TOOL_OPTIONS: "-Xmx5g -XX:MaxMetaspaceSize=512m -XX:+HeapDumpOnOutOfMemoryError"
         run: |
-          cd android && ./gradlew assembleRelease --no-daemon --stacktrace --info 2>&1
+          cd android && ./gradlew assembleRelease \
+            -Pandroid.injected.signing.store.file=$(pwd)/../dummy.keystore \
+            -Pandroid.injected.signing.store.password=password \
+            -Pandroid.injected.signing.key.alias=dummy \
+            -Pandroid.injected.signing.key.password=password \
+            --no-daemon --stacktrace --info 2>&1
 
       - name: Upload release APK artifact
         uses: actions/upload-artifact@v4
