@@ -3,13 +3,28 @@ import { Color, Tabs } from "expo-router";
 import { Pressable, Text, useColorScheme, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { tw } from "@/lib/tw";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
+
+import { Platform } from "react-native";
 
 const dyn = Color.android.dynamic;
 
 const TABS = [
-  { name: "home", label: "Home", symbol: "house.fill" },
-  { name: "videos", label: "videos", symbol: "video.fill" },
-  { name: "settings", label: "Settings", symbol: "gearshape.fill" },
+  {
+    name: "index",
+    label: "Home",
+    icon: { sf: "house.fill", md: "home" },
+  },
+  {
+    name: "videos",
+    label: "Videos",
+    icon: { sf: "video.fill", md: "video-library" },
+  },
+  {
+    name: "settings",
+    label: "Settings",
+    icon: { sf: "gearshape.fill", md: "settings" },
+  },
 ] as const;
 
 function FloatingTabBar({ state, navigation }: any) {
@@ -58,8 +73,8 @@ function FloatingTabBar({ state, navigation }: any) {
                 ]}
               >
                 <SymbolView
-                  name={tab.symbol}
-                  size={26}
+                  name={Platform.OS === "ios" ? tab.icon.sf : tab.icon.md}
+                  size={24}
                   tintColor={
                     isFocused
                       ? (dyn.onSecondaryContainer as string)
@@ -90,13 +105,13 @@ function FloatingTabBar({ state, navigation }: any) {
 
 export default function Layout() {
   return (
-    <Tabs
-      screenOptions={{ headerShown: false, animation: "shift" }}
-      tabBar={(props) => <FloatingTabBar {...props} />}
-    >
+    <NativeTabs blurEffect="systemMaterial">
       {TABS.map((tab) => (
-        <Tabs.Screen key={tab.name} name={tab.name} />
+        <NativeTabs.Trigger key={tab.name} name={tab.name}>
+          <NativeTabs.Trigger.Label>{tab.label}</NativeTabs.Trigger.Label>
+          <NativeTabs.Trigger.Icon sf={tab.icon.sf} md={tab.icon.md} />
+        </NativeTabs.Trigger>
       ))}
-    </Tabs>
+    </NativeTabs>
   );
 }
