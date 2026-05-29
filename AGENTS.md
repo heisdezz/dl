@@ -16,10 +16,10 @@ A cross-platform mobile application built with Expo and React Native for fetchin
 
 ## Tech Stack
 - **Framework**: Expo (SDK 56) / React Native
-- **State Management**: Zustand (History), TanStack React Query (Data Fetching)
+- **State Management**: Zustand (History & Session), TanStack React Query (Data Fetching)
 - **Styling**: `twrnc` (Tailwind for React Native)
 - **Icons**: `expo-symbols` (SF Symbols on iOS, Material Symbols on Android)
-- **Storage**: `@react-native-async-storage/async-storage` (Persist middleware)
+- **Storage**: `@react-native-async-storage/async-storage` (Persist middleware), `expo-file-system` (SAF for Downloads)
 
 ## Development Rules
 - **Package Manager**: Use `bun` for all dependency management (installing, adding, removing).
@@ -27,3 +27,4 @@ A cross-platform mobile application built with Expo and React Native for fetchin
 - **Type Checking**: Use `tsgo` via `bunx` (`bunx tsgo`) for all TypeScript compilations and to verify/fix type issues.
 - **Styling**: Prefer `twrnc` for styling components to maintain consistency.
 - **Theming**: Always use `Color.android.dynamic` (aliased as `dyn`) for colors to support system-wide theming.
+- **Background Operations**: Uses `expo-background-task` and `expo-task-manager` for periodic profile syncing.

@@ -9,9 +9,11 @@ export interface HistoryItem extends TikTokMetadata {
 
 interface HistoryState {
   history: HistoryItem[];
+  downloadPath: string | null;
   addItem: (item: TikTokMetadata) => void;
   removeItem: (id: string) => void;
   clearHistory: () => void;
+  setDownloadPath: (path: string | null) => void;
 }
 
 // Easy to swap AsyncStorage with MMKV here later
@@ -32,6 +34,7 @@ export const useHistoryStore = create<HistoryState>()(
   persist(
     (set) => ({
       history: [],
+      downloadPath: null,
       addItem: (item) =>
         set((state) => {
           const exists = state.history.find((h) => h.id === item.id);
@@ -45,6 +48,7 @@ export const useHistoryStore = create<HistoryState>()(
           history: state.history.filter((h) => h.id !== id),
         })),
       clearHistory: () => set({ history: [] }),
+      setDownloadPath: (path) => set({ downloadPath: path }),
     }),
     {
       name: "video-history-storage",

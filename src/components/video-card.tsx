@@ -1,10 +1,11 @@
-import React from "react";
-import { View, Text, Image, Pressable } from "react-native";
+import React, { useState } from "react";
+import { View, Text, Image, Pressable, ActivityIndicator } from "react-native";
 import { Color } from "expo-router";
 import { tw } from "@/lib/tw";
 import { TikTokMetadata } from "@/lib/tiktok";
 import { SymbolView } from "expo-symbols";
 import { useHistoryStore } from "@/lib/history";
+import { downloadVideo } from "@/lib/downloader";
 
 const dyn = Color.android.dynamic;
 
@@ -15,10 +16,38 @@ interface VideoCardProps {
 
 export function VideoCard({ metadata, onDownload }: VideoCardProps) {
   const addItem = useHistoryStore((state) => state.addItem);
+  const downloadPath = useHistoryStore((state) => state.downloadPath);
 
-  const handleDownload = () => {
-    addItem(metadata);
-    onDownload?.();
+  const [downloading, setDownloading] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const handleDownload = async () => {
+    if (!metadata.videoUrl) {
+      // If we don't have a direct URL, just add to history
+      addItem(metadata);
+      onDownload?.();
+      return;
+    }
+
+    setDownloading(true);
+    setProgress(0);
+
+    try {
+      const filename = `${metadata.author}_${metadata.id}.mp4`.replace(
+        /[^a-zA-Z0-9_.]/g,
+        "_",
+      );
+      await downloadVideo(metadata.videoUrl, filename, downloadPath, (p) =>
+        setProgress(p.progress),
+      );
+
+      addItem(metadata);
+      onDownload?.();
+    } catch (error) {
+      console.error("Download failed:", error);
+    } finally {
+      setDownloading(false);
+    }
   };
 
   return (
@@ -52,27 +81,50 @@ export function VideoCard({ metadata, onDownload }: VideoCardProps) {
 
         <Pressable
           onPress={handleDownload}
+          disabled={downloading}
           style={({ pressed }) => [
-            tw`flex-row items-center self-start px-4 py-2 rounded-full`,
+            tw`flex-row items-center self-start px-4 py-2 rounded-full overflow-hidden`,
             {
               backgroundColor: pressed
                 ? dyn.primaryContainer
                 : dyn.secondaryContainer,
+              opacity: downloading ? 0.8 : 1,
             },
           ]}
         >
-          <SymbolView
-            name="arrow.down.to.line.circle.fill"
-            size={18}
-            tintColor={dyn.onSecondaryContainer as string}
-          />
+          {downloading && (
+            <View
+              style={[
+                tw`absolute left-0 top-0 bottom-0`,
+                {
+                  width: `${progress * 100}%`,
+                  backgroundColor: dyn.primary,
+                  opacity: 0.3,
+                },
+              ]}
+            />
+          )}
+
+          {downloading ? (
+            <ActivityIndicator
+              size="small"
+              color={dyn.onSecondaryContainer as string}
+            />
+          ) : (
+            <SymbolView
+              name="arrow.down.to.line.circle.fill"
+              size={18}
+              tintColor={dyn.onSecondaryContainer as string}
+            />
+          )}
+
           <Text
             style={[
               tw`ml-2 text-sm font-bold`,
               { color: dyn.onSecondaryContainer },
             ]}
           >
-            Download
+            {downloading ? `${Math.round(progress * 100)}%` : "Download"}
           </Text>
         </Pressable>
       </View>

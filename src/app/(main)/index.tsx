@@ -9,24 +9,31 @@ import {
 import PageWrap from "@/components/layout/PageWrap";
 import { tw } from "@/lib/tw";
 import { Color } from "expo-router";
-import { getTikTokMetadata } from "@/lib/tiktok";
+import { getTikTokMetadata, fetchVideoViaTikDown } from "@/lib/tiktok";
 import { VideoCard } from "@/components/video-card";
 import { SymbolView } from "expo-symbols";
 import { useQuery } from "@tanstack/react-query";
+import { useSessionStore } from "@/lib/session";
 
 const dyn = Color.android.dynamic;
 
 export default function Index() {
   const [url, setUrl] = useState("");
   const [submittedUrl, setSubmittedUrl] = useState("");
+  const tiktokSessionId = useSessionStore((state) => state.tiktokSessionId);
 
   const {
     data: metadata,
     isLoading,
     isError,
   } = useQuery({
-    queryKey: ["tiktok-metadata", submittedUrl],
-    queryFn: () => getTikTokMetadata(submittedUrl),
+    queryKey: ["tiktok-metadata", submittedUrl, tiktokSessionId],
+    queryFn: () => {
+      if (tiktokSessionId) {
+        return fetchVideoViaTikDown(submittedUrl, tiktokSessionId);
+      }
+      return getTikTokMetadata(submittedUrl);
+    },
     enabled: !!submittedUrl,
     retry: false,
   });

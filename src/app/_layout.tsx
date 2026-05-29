@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { useHistoryStore } from "@/lib/history";
+import { registerBackgroundTask } from "@/lib/background";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -34,6 +35,9 @@ export default function RootLayout() {
       try {
         // Pre-load fonts or other assets here
         await new Promise((resolve) => setTimeout(resolve, 500));
+
+        // Register background task
+        await registerBackgroundTask();
       } catch (e) {
         console.warn(e);
       } finally {
