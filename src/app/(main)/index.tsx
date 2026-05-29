@@ -9,36 +9,31 @@ import {
 import PageWrap from "@/components/layout/PageWrap";
 import { tw } from "@/lib/tw";
 import { Color } from "expo-router";
-import { getTikTokMetadata, TikTokMetadata } from "@/lib/tiktok";
-import { TikTokPreview } from "@/components/tiktok-preview";
+import { getTikTokMetadata } from "@/lib/tiktok";
+import { VideoCard } from "@/components/video-card";
 import { SymbolView } from "expo-symbols";
+import { useQuery } from "@tanstack/react-query";
 
 const dyn = Color.android.dynamic;
 
 export default function Index() {
   const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [metadata, setMetadata] = useState<TikTokMetadata | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [submittedUrl, setSubmittedUrl] = useState("");
 
-  const handleFetch = async () => {
+  const {
+    data: metadata,
+    isLoading,
+    isError,
+  } = useQuery({
+    queryKey: ["tiktok-metadata", submittedUrl],
+    queryFn: () => getTikTokMetadata(submittedUrl),
+    enabled: !!submittedUrl,
+    retry: false,
+  });
+
+  const handleFetch = () => {
     if (!url) return;
-    setLoading(true);
-    setError(null);
-    setMetadata(null);
-
-    try {
-      const data = await getTikTokMetadata(url);
-      if (data) {
-        setMetadata(data);
-      } else {
-        setError("Could not find video. Check the URL.");
-      }
-    } catch (err) {
-      setError("An error occurred while fetching metadata.");
-    } finally {
-      setLoading(false);
-    }
+    setSubmittedUrl(url);
   };
 
   return (
@@ -69,18 +64,18 @@ export default function Index() {
           />
           <Pressable
             onPress={handleFetch}
-            disabled={loading || !url}
+            disabled={isLoading || !url}
             style={({ pressed }) => [
               tw`w-10 h-10 rounded-full items-center justify-center ml-2`,
               {
                 backgroundColor: pressed
                   ? dyn.secondaryContainer
                   : dyn.primaryContainer,
-                opacity: !url || loading ? 0.5 : 1,
+                opacity: !url || isLoading ? 0.5 : 1,
               },
             ]}
           >
-            {loading ? (
+            {isLoading ? (
               <ActivityIndicator size="small" color={dyn.onPrimaryContainer} />
             ) : (
               <SymbolView
@@ -92,14 +87,22 @@ export default function Index() {
           </Pressable>
         </View>
 
-        {error && (
+        {isError && (
           <Text style={[tw`mt-4 px-2 text-sm`, { color: dyn.error }]}>
-            {error}
+            Could not find video. Check the URL.
           </Text>
         )}
 
         {/* Preview Component */}
-        {metadata && <TikTokPreview metadata={metadata} />}
+        {metadata && (
+          <VideoCard
+            metadata={metadata}
+            onDownload={() => {
+              setUrl("");
+              setSubmittedUrl("");
+            }}
+          />
+        )}
       </View>
     </PageWrap>
   );

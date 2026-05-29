@@ -18,7 +18,7 @@ const TABS = [
   {
     name: "videos",
     label: "Videos",
-    icon: { sf: "video.fill", md: "video-library" },
+    icon: { sf: "video.fill", md: "video_library" },
   },
   {
     name: "settings",
@@ -73,7 +73,7 @@ function FloatingTabBar({ state, navigation }: any) {
                 ]}
               >
                 <SymbolView
-                  name={Platform.OS === "ios" ? tab.icon.sf : tab.icon.md}
+                  name={{ ios: tab.icon.sf, android: tab.icon.md } as any}
                   size={24}
                   tintColor={
                     isFocused

@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "dependencies": {
     "@expo/ui": "~56.0.14",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@tanstack/react-query": "^5.100.14",
     "expo": "~56.0.6",
     "expo-constants": "~56.0.16",
     "expo-device": "~56.0.4",
@@ -26,10 +28,12 @@
     "react-native-screens": "4.25.2",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.8.3",
-    "twrnc": "^4.16.0"
+    "twrnc": "^4.16.0",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
+    "@typescript/native-preview": "^7.0.0-dev.20260527.2",
     "typescript": "~6.0.3"
   },
   "scripts": {
