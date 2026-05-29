@@ -1,30 +1,35 @@
 # TikTok Downloader Project
 
-A cross-platform mobile application built with Expo and React Native for fetching and saving TikTok video metadata.
+A cross-platform mobile application built with Expo and React Native for fetching, saving, and downloading TikTok video metadata.
 
 ## Core Features
-- **URL Fetching**: Uses the TikTok oEmbed API to retrieve video titles, authors, and covers.
-- **Persistent History**: Saves downloaded video metadata to a local store using Zustand and AsyncStorage.
-- **Dynamic Theming**: Utilizes Material You (Android Dynamic Colors) and Expo's theme system for a modern UI.
+- **Intelligent URL Fetching**: Uses a dual-strategy approach with oEmbed for basics and the TikDown API for high-quality metadata and direct URLs.
+- **Persistent History & Sessions**: Decoupled Zustand stores for video history and TikTok session management.
+- **Progress-Tracked Downloads**: Integrated downloader module with real-time feedback and Android Storage Access Framework (SAF) support.
+- **Background Synchronization**: Automated profile-based syncing using `expo-background-task`.
+- **Material 3 Design**: Sophisticated UI following Material 3 principles with dynamic color support.
 
 ## Project Structure
-- `src/app/(main)/`: Contains the main application routes (Home, Videos, Settings).
-- `src/app/[videoid]/`: Dynamic route for detailed video metadata.
-- `src/components/`: Reusable UI components including `VideoCard` and `HistoryCard`.
-- `src/lib/`: Core logic for TikTok API interaction (`tiktok.ts`) and persistent storage (`history.ts`).
-- `src/components/layout/`: Global layout wrappers like `PageWrap`.
+- `src/app/(main)/`: Main application routes (Home, Videos, Settings).
+- `src/app/[videoid]/`: Dynamic route for high-fidelity video metadata views.
+- `src/components/`: Reusable UI components (`VideoCard`, `HistoryCard`).
+- `src/lib/session.ts`: Standalone TikTok session management.
+- `src/lib/history.ts`: Persistent download history and folder preferences.
+- `src/lib/downloader.ts`: Progress-tracked file system operations.
+- `src/lib/background.ts`: Periodic background synchronization tasks.
+- `src/lib/tiktok.ts`: API interaction logic using Axios and NDJSON streaming.
 
 ## Tech Stack
 - **Framework**: Expo (SDK 56) / React Native
 - **State Management**: Zustand (History & Session), TanStack React Query (Data Fetching)
+- **Networking**: Axios (Standard Requests), Fetch (NDJSON Streaming)
 - **Styling**: `twrnc` (Tailwind for React Native)
-- **Icons**: `expo-symbols` (SF Symbols on iOS, Material Symbols on Android)
-- **Storage**: `@react-native-async-storage/async-storage` (Persist middleware), `expo-file-system` (SAF for Downloads)
+- **Icons**: `expo-symbols` (SF Symbols / Material Symbols)
+- **Storage**: `@react-native-async-storage/async-storage`, `expo-file-system` (SAF Support)
 
 ## Development Rules
-- **Package Manager**: Use `bun` for all dependency management (installing, adding, removing).
+- **Package Manager**: Use `bun` for all dependency management.
 - **Execution**: Use `bunx` to run CLI tools (e.g., `bunx expo`, `bunx tsgo`).
-- **Type Checking**: Use `tsgo` via `bunx` (`bunx tsgo`) for all TypeScript compilations and to verify/fix type issues.
-- **Styling**: Prefer `twrnc` for styling components to maintain consistency.
-- **Theming**: Always use `Color.android.dynamic` (aliased as `dyn`) for colors to support system-wide theming.
-- **Background Operations**: Uses `expo-background-task` and `expo-task-manager` for periodic profile syncing.
+- **Type Checking**: Use `tsgo` via `bunx` for all TypeScript compilations.
+- **Theming**: Always use `Color.android.dynamic` (aliased as `dyn`) to support system-wide dynamic theming.
+- **Background Ops**: Ensure tasks are registered in the root layout's ready phase.
