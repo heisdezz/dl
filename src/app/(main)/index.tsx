@@ -28,12 +28,7 @@ export default function Index() {
     isError,
   } = useQuery({
     queryKey: ["tiktok-metadata", submittedUrl, tiktokSessionId],
-    queryFn: () => {
-      if (tiktokSessionId) {
-        return fetchVideoViaTikDown(submittedUrl, tiktokSessionId);
-      }
-      return getTikTokMetadata(submittedUrl);
-    },
+    queryFn: () => fetchVideoViaTikDown(submittedUrl, tiktokSessionId),
     enabled: !!submittedUrl,
     retry: false,
   });

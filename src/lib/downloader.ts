@@ -35,6 +35,14 @@ export async function downloadVideo(
             totalBytesWritten: p.totalBytesWritten,
             totalBytesExpectedToWrite: p.totalBytesExpectedToWrite,
           });
+        } else {
+          // If total size is unknown, just report progress as 0 for now
+          // but at least it shows activity
+          onProgress?.({
+            progress: 0,
+            totalBytesWritten: p.totalBytesWritten,
+            totalBytesExpectedToWrite: p.totalBytesExpectedToWrite,
+          });
         }
       },
     );
@@ -51,12 +59,10 @@ export async function downloadVideo(
           "video/mp4",
         );
 
-        const content = await FileSystem.readAsStringAsync(result.uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
-
-        await StorageAccessFramework.writeAsStringAsync(fileUri, content, {
-          encoding: FileSystem.EncodingType.Base64,
+        // Use copyAsync instead of read/write string to avoid memory issues with large videos
+        await FileSystem.copyAsync({
+          from: result.uri,
+          to: fileUri,
         });
 
         // Clean up tmp file

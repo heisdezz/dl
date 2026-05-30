@@ -40,17 +40,36 @@ export async function getTikTokMetadata(
  */
 export async function fetchVideoViaTikDown(
   videoUrl: string,
-  sessionId: string,
+  sessionId?: string | null,
 ): Promise<TikTokMetadata | null> {
-  let result: TikTokMetadata | null = null;
   try {
-    await fetchTikTokProfile(videoUrl, sessionId, 1, (video) => {
-      result = video;
-    });
+    const res = await fetch(
+      "https://tik-down-backend.vercel.app/tiktok/download",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ u: videoUrl, tt_session_id: sessionId || "" }),
+      },
+    );
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(errorData.error || "Failed to fetch video");
+    }
+
+    const videoData = await res.json();
+    return {
+      id: videoData.id,
+      title: videoData.title,
+      author: videoData.uploader,
+      coverUrl: videoData.thumbnail || videoData.thumbnails?.slice(-1)[0]?.url,
+      videoUrl: videoData.url || videoData.webpage_url,
+    };
   } catch (e) {
     console.error("TikDown fetch failed:", e);
+    // Fallback to oEmbed if TikDown fails
+    return getTikTokMetadata(videoUrl);
   }
-  return result;
 }
 
 /**
@@ -59,19 +78,18 @@ export async function fetchVideoViaTikDown(
  */
 export async function fetchTikTokProfile(
   username: string,
-  sessionId: string,
+  sessionId?: string | null,
   limit = 20,
   onVideoFetched?: (video: TikTokMetadata) => void,
 ) {
-  // Axios doesn't support NDJSON streaming as easily as fetch + reader in some environments,
-  // but for the sake of the exercise, we can use it with responseType: 'stream' in Node,
-  // but in React Native 'fetch' is actually more robust for streaming responses.
-  // However, we can use fetch for the streaming part and axios for others.
-
   const res = await fetch("https://tik-down-backend.vercel.app/tiktok", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ u: username, tt_session_id: sessionId, limit }),
+    body: JSON.stringify({
+      u: username,
+      tt_session_id: sessionId || "",
+      limit,
+    }),
   });
 
   if (!res.ok) {

@@ -1,5 +1,12 @@
 import React, { useState } from "react";
-import { View, Text, Image, Pressable, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  Pressable,
+  ActivityIndicator,
+  Alert,
+} from "react-native";
 import { Color } from "expo-router";
 import { tw } from "@/lib/tw";
 import { TikTokMetadata } from "@/lib/tiktok";
@@ -23,9 +30,10 @@ export function VideoCard({ metadata, onDownload }: VideoCardProps) {
 
   const handleDownload = async () => {
     if (!metadata.videoUrl) {
-      // If we don't have a direct URL, just add to history
-      addItem(metadata);
-      onDownload?.();
+      Alert.alert(
+        "Cannot Download",
+        "Direct video URL is not available. Please ensure you have a valid session ID in Settings to fetch video URLs.",
+      );
       return;
     }
 
@@ -43,8 +51,13 @@ export function VideoCard({ metadata, onDownload }: VideoCardProps) {
 
       addItem(metadata);
       onDownload?.();
+      Alert.alert("Success", "Video downloaded successfully!");
     } catch (error) {
       console.error("Download failed:", error);
+      Alert.alert(
+        "Download Failed",
+        "There was an error downloading the video.",
+      );
     } finally {
       setDownloading(false);
     }
@@ -124,7 +137,11 @@ export function VideoCard({ metadata, onDownload }: VideoCardProps) {
               { color: dyn.onSecondaryContainer },
             ]}
           >
-            {downloading ? `${Math.round(progress * 100)}%` : "Download"}
+            {downloading
+              ? progress > 0
+                ? `${Math.round(progress * 100)}%`
+                : "Downloading..."
+              : "Download"}
           </Text>
         </Pressable>
       </View>
