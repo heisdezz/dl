@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, Image, Pressable } from "react-native";
+import { View, Text, Image, Pressable, Alert } from "react-native";
 import { Color, useRouter } from "expo-router";
+import { deleteAsync } from "expo-file-system/legacy";
 import { tw } from "@/lib/tw";
 import { HistoryItem, useHistoryStore } from "@/lib/history";
 import { SymbolView } from "expo-symbols";
@@ -59,7 +60,27 @@ export function HistoryCard({ item }: HistoryCardProps) {
       <Pressable
         onPress={(e) => {
           e.stopPropagation();
-          removeItem(item.id);
+          Alert.alert(
+            "Delete Video",
+            item.localUri
+              ? "Remove from history and delete the downloaded file?"
+              : "Remove from history?",
+            [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Delete",
+                style: "destructive",
+                onPress: async () => {
+                  if (item.localUri) {
+                    await deleteAsync(item.localUri, { idempotent: true }).catch(
+                      () => {},
+                    );
+                  }
+                  removeItem(item.id);
+                },
+              },
+            ],
+          );
         }}
         style={({ pressed }) => [
           tw`p-2 rounded-full`,

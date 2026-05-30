@@ -17,8 +17,6 @@ TaskManager.defineTask(BACKGROUND_TASK_IDENTIFIER, async () => {
     const { tiktokSessionId } = useSessionStore.getState();
     const { history, addItem } = useHistoryStore.getState();
 
-    if (!tiktokSessionId) return BackgroundTask.BackgroundTaskResult.Success;
-
     // For simplicity, let's say we sync the uploader of the last downloaded video
     const lastVideo = history[0];
     if (!lastVideo) return BackgroundTask.BackgroundTaskResult.Success;

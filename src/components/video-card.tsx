@@ -12,6 +12,7 @@ import { tw } from "@/lib/tw";
 import { TikTokMetadata } from "@/lib/tiktok";
 import { SymbolView } from "expo-symbols";
 import { useHistoryStore } from "@/lib/history";
+import { useSessionStore } from "@/lib/session";
 import { downloadVideo } from "@/lib/downloader";
 
 const dyn = Color.android.dynamic;
@@ -24,15 +25,17 @@ interface VideoCardProps {
 export function VideoCard({ metadata, onDownload }: VideoCardProps) {
   const addItem = useHistoryStore((state) => state.addItem);
   const downloadPath = useHistoryStore((state) => state.downloadPath);
+  const tiktokSessionId = useSessionStore((state) => state.tiktokSessionId);
 
   const [downloading, setDownloading] = useState(false);
   const [progress, setProgress] = useState(0);
 
   const handleDownload = async () => {
-    if (!metadata.videoUrl) {
+    const tikTokUrl = metadata.pageUrl ?? metadata.videoUrl;
+    if (!tikTokUrl) {
       Alert.alert(
         "Cannot Download",
-        "Direct video URL is not available. Please ensure you have a valid session ID in Settings to fetch video URLs.",
+        "Video URL is not available. Some videos require a session ID in Settings.",
       );
       return;
     }
@@ -45,11 +48,15 @@ export function VideoCard({ metadata, onDownload }: VideoCardProps) {
         /[^a-zA-Z0-9_.]/g,
         "_",
       );
-      await downloadVideo(metadata.videoUrl, filename, downloadPath, (p) =>
-        setProgress(p.progress),
+      const localUri = await downloadVideo(
+        tikTokUrl,
+        filename,
+        downloadPath,
+        (p) => setProgress(p.progress),
+        tiktokSessionId,
       );
 
-      addItem(metadata);
+      addItem(metadata, localUri);
       onDownload?.();
       Alert.alert("Success", "Video downloaded successfully!");
     } catch (error) {

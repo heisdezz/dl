@@ -6,38 +6,41 @@ export interface TikTokMetadata {
   author: string;
   coverUrl: string;
   videoUrl?: string;
+  pageUrl?: string;
 }
 
-/**
- * A simple TikTok scraper using the oEmbed API.
- */
+function mapVideoData(data: any): TikTokMetadata {
+  return {
+    id: data.id,
+    title: data.title,
+    author: data.uploader,
+    coverUrl: data.thumbnail || data.thumbnails?.slice(-1)[0]?.url,
+    videoUrl: data.url || data.webpage_url,
+    pageUrl: data.webpage_url,
+  };
+}
+
 export async function getTikTokMetadata(
   url: string,
 ): Promise<TikTokMetadata | null> {
   try {
     if (!url.includes("tiktok.com")) return null;
-
-    const response = await axios.get(
+    const res = await fetch(
       `https://www.tiktok.com/oembed?url=${encodeURIComponent(url)}`,
     );
-
-    const data = response.data;
-
+    if (!res.ok) return null;
+    const data = await res.json();
     return {
-      id: data.video_id || Math.random().toString(36).substring(7),
+      id: data.video_id || url.split("/").pop() || "",
       title: data.title || "TikTok Video",
       author: data.author_name || "Unknown Author",
       coverUrl: data.thumbnail_url,
     };
-  } catch (error) {
-    console.error("Failed to fetch TikTok metadata:", error);
+  } catch {
     return null;
   }
 }
 
-/**
- * Fetches metadata for a single video using the TikDown API.
- */
 export async function fetchVideoViaTikDown(
   videoUrl: string,
   sessionId?: string | null,
@@ -51,31 +54,17 @@ export async function fetchVideoViaTikDown(
         body: JSON.stringify({ u: videoUrl, tt_session_id: sessionId || "" }),
       },
     );
-
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.error || "Failed to fetch video");
+      const { error } = await res.json();
+      throw new Error(error || "Failed to fetch video");
     }
-
-    const videoData = await res.json();
-    return {
-      id: videoData.id,
-      title: videoData.title,
-      author: videoData.uploader,
-      coverUrl: videoData.thumbnail || videoData.thumbnails?.slice(-1)[0]?.url,
-      videoUrl: videoData.url || videoData.webpage_url,
-    };
+    return mapVideoData(await res.json());
   } catch (e) {
     console.error("TikDown fetch failed:", e);
-    // Fallback to oEmbed if TikDown fails
     return getTikTokMetadata(videoUrl);
   }
 }
 
-/**
- * Fetches videos from a TikTok profile using the TikDown API.
- * This implementation uses axios for the initial request and manual parsing for NDJSON streaming.
- */
 export async function fetchTikTokProfile(
   username: string,
   sessionId?: string | null,
@@ -93,8 +82,8 @@ export async function fetchTikTokProfile(
   });
 
   if (!res.ok) {
-    const errorData = await res.json();
-    throw new Error(errorData.error || "Failed to fetch profile");
+    const { error } = await res.json();
+    throw new Error(error || "Failed to fetch profile");
   }
 
   const reader = res.body?.getReader();
@@ -112,20 +101,52 @@ export async function fetchTikTokProfile(
     for (const line of lines) {
       if (line.trim()) {
         try {
-          const videoData = JSON.parse(line);
-          const metadata: TikTokMetadata = {
-            id: videoData.id,
-            title: videoData.title,
-            author: videoData.uploader,
-            coverUrl:
-              videoData.thumbnail || videoData.thumbnails?.slice(-1)[0]?.url,
-            videoUrl: videoData.url || videoData.webpage_url,
-          };
-          onVideoFetched?.(metadata);
+          onVideoFetched?.(mapVideoData(JSON.parse(line)));
         } catch (e) {
           console.error("Error parsing NDJSON line:", e);
         }
       }
     }
   }
+}
+
+export async function resolveDownloadUrl(tikTokUrl: string): Promise<string> {
+  // console.log(tikTokUrl, "q");
+
+  const payload = {
+    q: tikTokUrl,
+    lang: "en",
+  };
+
+  console.log("payload", payload);
+  const { data } = await axios.post(
+    "https://tikdownloader.io/api/ajaxSearch",
+    new URLSearchParams(payload).toString(),
+  );
+
+  console.log("data", data);
+  if (data.status !== "ok" || !data.data) {
+    throw new Error(`tikdownloader.io error: status=${data.status}`);
+  }
+
+  const html = data.data;
+  const decode = (u: string) => u.replace(/&amp;/g, "&");
+
+  // HD MP4 via snapcdn
+  const hdMatch = html.match(
+    /href="([^"]+)"[^>]*>\s*<i[^>]*><\/i>\s*Download MP4 HD/,
+  );
+  if (hdMatch?.[1]) return decode(hdMatch[1]);
+
+  // Any snapcdn non-MP3 link
+  const snapUrl = [
+    ...html.matchAll(/href="(https?:\/\/dl\.snapcdn[^"]+)"/g),
+  ].find((m) => !m[1].includes(".mp3"))?.[1];
+  if (snapUrl) return decode(snapUrl);
+
+  // Direct CDN fallback
+  const cdnMatch = html.match(/href="(https:\/\/v1[^"]+\.mp4[^"]*)"/);
+  if (cdnMatch?.[1]) return decode(cdnMatch[1]);
+
+  throw new Error("Could not extract download URL from tikdownloader.io");
 }
