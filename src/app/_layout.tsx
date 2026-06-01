@@ -60,16 +60,20 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-      {/*<ExperimentalStack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />*/}
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+        {/*<ExperimentalStack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />*/}
+      </GestureHandlerRootView>
     </QueryClientProvider>
   );
 }
+
+import { GestureHandlerRootView } from "react-native-gesture-handler";

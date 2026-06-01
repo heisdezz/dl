@@ -1,4 +1,5 @@
 import axios from "axios";
+import { Logger } from "./logger";
 
 export interface TikTokMetadata {
   id: string;
@@ -111,42 +112,42 @@ export async function fetchTikTokProfile(
 }
 
 export async function resolveDownloadUrl(tikTokUrl: string): Promise<string> {
-  // console.log(tikTokUrl, "q");
-
-  const payload = {
-    q: tikTokUrl,
-    lang: "en",
-  };
-
-  console.log("payload", payload);
+  Logger.info("resolveDownloadUrl", { url: tikTokUrl });
   const { data } = await axios.post(
     "https://tikdownloader.io/api/ajaxSearch",
-    new URLSearchParams(payload).toString(),
+    new URLSearchParams({ q: tikTokUrl, lang: "en" }).toString(),
   );
 
-  console.log("data", data);
   if (data.status !== "ok" || !data.data) {
+    Logger.error("tikdownloader.io bad status", { status: data.status });
     throw new Error(`tikdownloader.io error: status=${data.status}`);
   }
 
   const html = data.data;
   const decode = (u: string) => u.replace(/&amp;/g, "&");
 
-  // HD MP4 via snapcdn
   const hdMatch = html.match(
     /href="([^"]+)"[^>]*>\s*<i[^>]*><\/i>\s*Download MP4 HD/,
   );
-  if (hdMatch?.[1]) return decode(hdMatch[1]);
+  if (hdMatch?.[1]) {
+    Logger.info("resolved HD link");
+    return decode(hdMatch[1]);
+  }
 
-  // Any snapcdn non-MP3 link
   const snapUrl = [
     ...html.matchAll(/href="(https?:\/\/dl\.snapcdn[^"]+)"/g),
   ].find((m) => !m[1].includes(".mp3"))?.[1];
-  if (snapUrl) return decode(snapUrl);
+  if (snapUrl) {
+    Logger.warn("HD link not found, using snapcdn fallback");
+    return decode(snapUrl);
+  }
 
-  // Direct CDN fallback
   const cdnMatch = html.match(/href="(https:\/\/v1[^"]+\.mp4[^"]*)"/);
-  if (cdnMatch?.[1]) return decode(cdnMatch[1]);
+  if (cdnMatch?.[1]) {
+    Logger.warn("snapcdn not found, using CDN fallback");
+    return decode(cdnMatch[1]);
+  }
 
+  Logger.error("no download URL found in response");
   throw new Error("Could not extract download URL from tikdownloader.io");
 }

@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -8,13 +9,26 @@ export interface HistoryItem extends TikTokMetadata {
   localUri?: string;
 }
 
+export type SortOrder = "newest" | "oldest" | "author";
+
+export interface HistoryFilter {
+  query: string;
+  localOnly: boolean;
+  sort: SortOrder;
+}
+
+const DEFAULT_FILTER: HistoryFilter = { query: "", localOnly: false, sort: "newest" };
+
 interface HistoryState {
   history: HistoryItem[];
   downloadPath: string | null;
+  filter: HistoryFilter;
   addItem: (item: TikTokMetadata, localUri?: string) => void;
   removeItem: (id: string) => void;
   clearHistory: () => void;
   setDownloadPath: (path: string | null) => void;
+  setFilter: (patch: Partial<HistoryFilter>) => void;
+  resetFilter: () => void;
 }
 
 export const useHistoryStore = create<HistoryState>()(
@@ -22,6 +36,7 @@ export const useHistoryStore = create<HistoryState>()(
     (set) => ({
       history: [],
       downloadPath: null,
+      filter: DEFAULT_FILTER,
       addItem: (item, localUri) =>
         set((state) => {
           if (state.history.some((h) => h.id === item.id)) return state;
@@ -38,10 +53,46 @@ export const useHistoryStore = create<HistoryState>()(
         })),
       clearHistory: () => set({ history: [] }),
       setDownloadPath: (path) => set({ downloadPath: path }),
+      setFilter: (patch) =>
+        set((state) => ({ filter: { ...state.filter, ...patch } })),
+      resetFilter: () => set({ filter: DEFAULT_FILTER }),
     }),
     {
       name: "video-history-storage",
       storage: createJSONStorage(() => AsyncStorage),
+      // don't persist transient filter state
+      partialize: (state) => ({
+        history: state.history,
+        downloadPath: state.downloadPath,
+      }),
     },
   ),
 );
+
+export function useFilteredHistory(): HistoryItem[] {
+  const history = useHistoryStore((s) => s.history);
+  const filter = useHistoryStore((s) => s.filter);
+
+  return useMemo(() => {
+    const q = filter.query.trim().toLowerCase();
+    const filtered = history.filter((item) => {
+      if (filter.localOnly && !item.localUri) return false;
+      if (!q) return true;
+      return (
+        item.author.toLowerCase().includes(q) ||
+        (item.title?.toLowerCase().includes(q) ?? false)
+      );
+    });
+    return [...filtered].sort((a, b) => {
+      switch (filter.sort) {
+        case "oldest":
+          return a.downloadedAt - b.downloadedAt;
+        case "author":
+          return a.author.localeCompare(b.author);
+        case "newest":
+        default:
+          return b.downloadedAt - a.downloadedAt;
+      }
+    });
+  }, [history, filter]);
+}

@@ -1,6 +1,7 @@
 import * as FileSystem from "expo-file-system/legacy";
 import { Platform } from "react-native";
 import { resolveDownloadUrl } from "./tiktok";
+import { Logger } from "./logger";
 
 export interface DownloadProgress {
   progress: number;
@@ -43,6 +44,7 @@ export async function downloadVideo(
     return tikTokUrl;
   }
 
+  Logger.info("download started", { filename, downloadPath });
   const url = await resolveDownloadUrl(tikTokUrl);
   const isSAF = !!downloadPath?.startsWith("content://");
 
@@ -62,9 +64,13 @@ export async function downloadVideo(
     await ensureDir(cacheDir);
     const cacheFile = cacheDir + filename;
 
+    Logger.info("downloading to cache for SAF", { cacheFile });
     const task = FileSystem.createDownloadResumable(url, cacheFile, {}, onSnap);
     const result = await task.downloadAsync();
-    if (!result?.uri) throw new Error("Download failed");
+    if (!result?.uri) {
+      Logger.error("cache download returned no URI");
+      throw new Error("Download failed");
+    }
 
     await acquireLock(downloadPath);
     try {
@@ -76,24 +82,28 @@ export async function downloadVideo(
 
       try {
         await FileSystem.copyAsync({ from: cacheFile, to: safUri });
-      } catch {
-        // copyAsync can fail on some Android versions — fall back to Base64
+        Logger.info("SAF copy complete", { safUri });
+      } catch (e) {
+        Logger.warn("copyAsync failed, falling back to Base64", { error: String(e) });
         const base64 = await FileSystem.readAsStringAsync(cacheFile, {
           encoding: FileSystem.EncodingType.Base64,
         });
         await FileSystem.writeAsStringAsync(safUri, base64, {
           encoding: FileSystem.EncodingType.Base64,
         });
+        Logger.info("Base64 SAF transfer complete");
       }
 
       FileSystem.deleteAsync(cacheFile, { idempotent: true }).catch(() => {});
       return safUri;
+    } catch (e) {
+      Logger.error("SAF transfer failed", { error: String(e) });
+      throw e;
     } finally {
       releaseLock(downloadPath);
     }
   }
 
-  // Normal file:// destination
   const destDir = downloadPath
     ? downloadPath.endsWith("/")
       ? downloadPath
@@ -103,8 +113,13 @@ export async function downloadVideo(
   await ensureDir(destDir);
   const filePath = destDir + filename;
 
+  Logger.info("downloading to file", { filePath });
   const task = FileSystem.createDownloadResumable(url, filePath, {}, onSnap);
   const result = await task.downloadAsync();
-  if (!result?.uri) throw new Error("Download failed");
+  if (!result?.uri) {
+    Logger.error("download returned no URI");
+    throw new Error("Download failed");
+  }
+  Logger.info("download complete", { uri: result.uri });
   return result.uri;
 }

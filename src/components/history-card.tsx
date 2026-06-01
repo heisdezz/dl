@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, Image, Pressable, Alert } from "react-native";
+import { View, Text, Image, Pressable, Alert, Share } from "react-native";
 import { Color, useRouter } from "expo-router";
 import { deleteAsync } from "expo-file-system/legacy";
 import { tw } from "@/lib/tw";
@@ -15,7 +15,6 @@ interface HistoryCardProps {
 export function HistoryCard({ item }: HistoryCardProps) {
   const removeItem = useHistoryStore((state) => state.removeItem);
   const router = useRouter();
-
   return (
     <Pressable
       onPress={() => router.push(`/${item.id}`)}
@@ -60,6 +59,32 @@ export function HistoryCard({ item }: HistoryCardProps) {
       <Pressable
         onPress={(e) => {
           e.stopPropagation();
+          Share.share({
+            url:
+              item.pageUrl ??
+              `https://www.tiktok.com/@${item.author}/video/${item.id}`,
+            message: `${item.title} — @${item.author}`,
+          });
+        }}
+        style={({ pressed }) => [
+          tw`p-2 rounded-full mr-1`,
+          {
+            backgroundColor: pressed
+              ? dyn.secondaryContainer
+              : dyn.surfaceContainerHigh,
+          },
+        ]}
+      >
+        <SymbolView
+          name={{ ios: "square.and.arrow.up", android: "share" }}
+          size={18}
+          tintColor={dyn.onSurfaceVariant as string}
+        />
+      </Pressable>
+
+      <Pressable
+        onPress={(e) => {
+          e.stopPropagation();
           Alert.alert(
             "Delete Video",
             item.localUri
@@ -72,9 +97,9 @@ export function HistoryCard({ item }: HistoryCardProps) {
                 style: "destructive",
                 onPress: async () => {
                   if (item.localUri) {
-                    await deleteAsync(item.localUri, { idempotent: true }).catch(
-                      () => {},
-                    );
+                    await deleteAsync(item.localUri, {
+                      idempotent: true,
+                    }).catch(() => {});
                   }
                   removeItem(item.id);
                 },
