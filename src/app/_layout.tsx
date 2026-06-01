@@ -1,11 +1,13 @@
 import { Host } from "@expo/ui";
 import { ExperimentalStack, Stack } from "expo-router";
-import { View } from "react-native";
+import { View, Platform } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { useHistoryStore } from "@/lib/history";
 import { registerBackgroundTask } from "@/lib/background";
+import * as MediaLibrary from "expo-media-library";
+import { Logger } from "@/lib/logger";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -33,13 +35,23 @@ export default function RootLayout() {
   useEffect(() => {
     async function prepare() {
       try {
+        // Request storage permissions on Android
+        if (Platform.OS === "android") {
+          const { status } = await MediaLibrary.requestPermissionsAsync();
+          if (status !== "granted") {
+            Logger.warn("Storage permissions not granted on mount");
+          } else {
+            Logger.info("Storage permissions granted");
+          }
+        }
+
         // Pre-load fonts or other assets here
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         // Register background task
         await registerBackgroundTask();
       } catch (e) {
-        console.warn(e);
+        Logger.warn("Prepare failed", { error: String(e) });
       } finally {
         setAppIsReady(true);
       }

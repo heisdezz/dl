@@ -1,10 +1,12 @@
 import React from "react";
-import { View, Text, Image, Pressable, Share } from "react-native";
+import { View, Text, Image, Pressable, Share, Alert } from "react-native";
 import { Color, useRouter } from "expo-router";
 import { tw } from "@/lib/tw";
 import { HistoryItem, useHistoryStore } from "@/lib/history";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
+import { Logger } from "@/lib/logger";
 
 const dyn = Color.android.dynamic;
 
@@ -18,16 +20,35 @@ export function HistoryCard({ item }: HistoryCardProps) {
   const router = useRouter();
 
   const handleShare = async () => {
-    if (item.localUri && (await Sharing.isAvailableAsync())) {
-      await Sharing.shareAsync(item.localUri);
-    } else {
-      const shareUrl =
-        item.pageUrl ??
-        `https://www.tiktok.com/@${item.author}/video/${item.id}`;
-      Share.share({
-        url: shareUrl,
-        message: `Check out this TikTok video by @${item.author}: ${shareUrl}`,
-      });
+    Logger.info("Share requested (HistoryCard)", {
+      id: item.id,
+      uri: item.localUri,
+    });
+    try {
+      if (item.localUri && (await Sharing.isAvailableAsync())) {
+        let uriToShare = item.localUri;
+        if (uriToShare.startsWith("content://")) {
+          Logger.info("Converting content URI to file URI for sharing");
+          const tempFile =
+            (FileSystem.cacheDirectory ?? "") + `share_${item.id}.mp4`;
+          await FileSystem.copyAsync({ from: uriToShare, to: tempFile });
+          uriToShare = tempFile;
+        }
+        await Sharing.shareAsync(uriToShare);
+        Logger.info("Share completed");
+      } else {
+        const shareUrl =
+          item.pageUrl ??
+          `https://www.tiktok.com/@${item.author}/video/${item.id}`;
+        await Share.share({
+          url: shareUrl,
+          message: `Check out this TikTok video by @${item.author}: ${shareUrl}`,
+        });
+        Logger.info("Link share completed");
+      }
+    } catch (error) {
+      Logger.error("Share failed", { error: String(error) });
+      Alert.alert("Share Failed", "Could not share the video.");
     }
   };
 

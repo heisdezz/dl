@@ -8,6 +8,7 @@ import {
   Share,
   useWindowDimensions,
   StyleSheet,
+  Alert,
 } from "react-native";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter, Color } from "expo-router";
@@ -17,6 +18,8 @@ import { tw } from "@/lib/tw";
 import { useHistoryStore } from "@/lib/history";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
+import { Logger } from "@/lib/logger";
 
 const dyn = Color.android.dynamic;
 
@@ -63,6 +66,9 @@ function VideoControls({ player }: { player: VideoPlayer }) {
   }, []);
 
   const togglePlay = () => {
+    if (player.currentTime >= (player.duration ?? 0) - 0.1) {
+      player.currentTime = 0;
+    }
     player.playing ? player.pause() : player.play();
     resetHideTimer();
   };
@@ -160,9 +166,14 @@ export default function VideoDetail() {
   const deleteItem = useHistoryStore((s) => s.deleteItem);
   const [showPlayer, setShowPlayer] = useState(false);
 
-  const player = useVideoPlayer(item?.localUri ?? "");
+  const player = useVideoPlayer(item?.localUri ?? "", (player) => {
+    player.loop = true;
+  });
 
   const handlePlay = () => {
+    if (player.currentTime >= (player.duration ?? 0) - 0.1) {
+      player.currentTime = 0;
+    }
     setShowPlayer(true);
     player.play();
   };
@@ -210,16 +221,35 @@ export default function VideoDetail() {
   });
 
   const handleShare = async () => {
-    if (item.localUri && (await Sharing.isAvailableAsync())) {
-      await Sharing.shareAsync(item.localUri);
-    } else {
-      const shareUrl =
-        item.pageUrl ??
-        `https://www.tiktok.com/@${item.author}/video/${item.id}`;
-      Share.share({
-        url: shareUrl,
-        message: `Check out this TikTok video by @${item.author}: ${shareUrl}`,
-      });
+    Logger.info("Share requested (VideoDetail)", {
+      id: item.id,
+      uri: item.localUri,
+    });
+    try {
+      if (item.localUri && (await Sharing.isAvailableAsync())) {
+        let uriToShare = item.localUri;
+        if (uriToShare.startsWith("content://")) {
+          Logger.info("Converting content URI to file URI for sharing");
+          const tempFile =
+            (FileSystem.cacheDirectory ?? "") + `share_${item.id}.mp4`;
+          await FileSystem.copyAsync({ from: uriToShare, to: tempFile });
+          uriToShare = tempFile;
+        }
+        await Sharing.shareAsync(uriToShare);
+        Logger.info("Share completed");
+      } else {
+        const shareUrl =
+          item.pageUrl ??
+          `https://www.tiktok.com/@${item.author}/video/${item.id}`;
+        await Share.share({
+          url: shareUrl,
+          message: `Check out this TikTok video by @${item.author}: ${shareUrl}`,
+        });
+        Logger.info("Link share completed");
+      }
+    } catch (error) {
+      Logger.error("Share failed", { error: String(error) });
+      Alert.alert("Share Failed", "Could not share the video.");
     }
   };
 
