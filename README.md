@@ -1,56 +1,73 @@
-# Welcome to your Expo app 👋
+# TikDown - TikTok Downloader
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A modern, fast, and elegant TikTok video downloader built with React Native and Expo. TikDown allows you to fetch, download, and manage your favorite TikTok videos with high-quality results and a native experience.
 
-## Get started
+## ✨ Features
 
-1. Install dependencies
+- **Direct Downloads**: Download high-quality MP4 videos directly from TikTok URLs.
+- **Native Video Player**: Integrated high-performance video player with custom controls, seek-to-drag, and auto-looping.
+- **Fullscreen Support**: Enjoy your videos in native fullscreen mode.
+- **History Management**: Keep track of your downloads with a persistent history, search, and sort functionality.
+- **Material 3 Design**: Beautiful UI with Material You dynamic theming and responsive layouts.
+- **SAF Support**: Full support for Android Storage Access Framework to save videos directly to your preferred folders.
+- **Smart Sharing**: Share local video files or links with one tap.
+- **Session Logging**: In-app logs to track downloads and system events.
 
+## 🚀 Getting Started
+
+### Prerequisites
+
+- [Bun](https://bun.sh/) (Recommended package manager)
+- [Expo CLI](https://docs.expo.dev/get-started/installation/)
+- Android Studio / Xcode (for native development)
+
+### Installation
+
+1. Clone the repository:
    ```bash
-   npm install
+   git clone https://github.com/heisdezz/dl.git
+   cd dl
    ```
 
-2. Start the app
-
+2. Install dependencies:
    ```bash
-   npx expo start
+   bun install
    ```
 
-In the output, you'll find options to open the app in a
+3. Start the development server:
+   ```bash
+   bun start
+   ```
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+### Building for Android
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+To generate a release APK:
 
 ```bash
-npm run reset-project
+bunx expo prebuild --platform android
+cd android && ./gradlew assembleRelease
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+The APK will be located at `android/app/build/outputs/apk/release/app-release.apk`.
 
-### Other setup steps
+## 🛠 Tech Stack
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+- **Framework**: Expo SDK 56 / React Native
+- **Navigation**: Expo Router (File-based)
+- **State Management**: Zustand + TanStack Query
+- **Styling**: twrnc (Tailwind CSS for React Native) + Material 3 Dynamic Colors
+- **Video**: expo-video
+- **Icons**: MaterialCommunityIcons (@expo/vector-icons)
+- **Database**: AsyncStorage (Persistence)
 
-## Learn more
+## 🤝 Contributing
 
-To learn more about developing your project with Expo, look at the following resources:
+Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/heisdezz/dl/issues).
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📝 License
 
-## Join the community
+Distributed under the MIT License. See `LICENSE` for more information.
 
-Join our community of developers creating universal apps.
+---
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Built with ❤️ by [heisdezz](https://github.com/heisdezz)
