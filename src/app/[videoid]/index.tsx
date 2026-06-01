@@ -29,7 +29,13 @@ function fmt(secs: number) {
   return `${String(m).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
 }
 
-function VideoControls({ player }: { player: VideoPlayer }) {
+function VideoControls({
+  player,
+  onFullscreen,
+}: {
+  player: VideoPlayer;
+  onFullscreen?: () => void;
+}) {
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
   const [duration, setDuration] = useState(1);
@@ -149,6 +155,20 @@ function VideoControls({ player }: { player: VideoPlayer }) {
             >
               <MaterialCommunityIcons name="refresh" size={16} color="#fff" />
             </Pressable>
+
+            <Pressable
+              onPress={() => {
+                onFullscreen?.();
+                resetHideTimer();
+              }}
+              hitSlop={8}
+            >
+              <MaterialCommunityIcons
+                name="fullscreen"
+                size={20}
+                color="#fff"
+              />
+            </Pressable>
           </View>
         </View>
       )}
@@ -165,6 +185,7 @@ export default function VideoDetail() {
   const removeItem = useHistoryStore((s) => s.removeItem);
   const deleteItem = useHistoryStore((s) => s.deleteItem);
   const [showPlayer, setShowPlayer] = useState(false);
+  const videoViewRef = useRef<VideoView>(null);
 
   const player = useVideoPlayer(item?.localUri ?? "", (player) => {
     player.loop = true;
@@ -271,13 +292,18 @@ export default function VideoDetail() {
           {showPlayer && item.localUri ? (
             <>
               <VideoView
+                ref={videoViewRef}
                 player={player}
                 style={{ width: videoWidth, height: videoHeight }}
                 nativeControls={false}
                 contentFit="contain"
                 allowsPictureInPicture
+                fullscreenOptions={{ enable: true }}
               />
-              <VideoControls player={player} />
+              <VideoControls
+                player={player}
+                onFullscreen={() => videoViewRef.current?.enterFullscreen()}
+              />
             </>
           ) : (
             <>
