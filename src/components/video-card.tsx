@@ -10,7 +10,7 @@ import {
 import { Color } from "expo-router";
 import { tw } from "@/lib/tw";
 import { TikTokMetadata } from "@/lib/tiktok";
-import { SymbolView } from "expo-symbols";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useHistoryStore } from "@/lib/history";
 import { useSessionStore } from "@/lib/session";
 import { downloadVideo } from "@/lib/downloader";
@@ -131,10 +131,10 @@ export function VideoCard({ metadata, onDownload }: VideoCardProps) {
               color={dyn.onSecondaryContainer as string}
             />
           ) : (
-            <SymbolView
-              name="arrow.down.to.line.circle.fill"
+            <MaterialCommunityIcons
+              name="download-circle"
               size={18}
-              tintColor={dyn.onSecondaryContainer as string}
+              color={dyn.onSecondaryContainer as string}
             />
           )}
 

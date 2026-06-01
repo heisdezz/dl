@@ -1,17 +1,10 @@
 import React from "react";
-import {
-  View,
-  Text,
-  Pressable,
-  Alert,
-  Platform,
-} from "react-native";
+import { View, Text, Pressable, Alert, Platform, Linking } from "react-native";
 import PageWrap from "@/components/layout/PageWrap";
 import { tw } from "@/lib/tw";
 import { Color, useRouter } from "expo-router";
 import { useHistoryStore } from "@/lib/history";
-import { useSessionStore } from "@/lib/session";
-import { SymbolView } from "expo-symbols";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
 import { StorageAccessFramework } from "expo-file-system/legacy";
 
@@ -23,16 +16,6 @@ export default function Settings() {
   const historyCount = useHistoryStore((state) => state.history.length);
   const downloadPath = useHistoryStore((state) => state.downloadPath);
   const setDownloadPath = useHistoryStore((state) => state.setDownloadPath);
-
-  const tiktokSessionId = useSessionStore((s) => s.tiktokSessionId);
-  const logout = useSessionStore((s) => s.logout);
-
-  const handleLogout = () => {
-    Alert.alert("Sign Out", "Remove your TikTok session?", [
-      { text: "Cancel", style: "cancel" },
-      { text: "Sign Out", style: "destructive", onPress: logout },
-    ]);
-  };
 
   const handleClear = () => {
     Alert.alert(
@@ -85,78 +68,7 @@ export default function Settings() {
             },
           ]}
         >
-          {/* TikTok Account Section */}
-          <View style={tw`p-4 border-b border-gray-100/10`}>
-            <Text style={[tw`text-base font-bold mb-1`, { color: dyn.onSurface }]}>
-              TikTok Account
-            </Text>
-
-            {tiktokSessionId ? (
-              <View style={tw`gap-3`}>
-                <View
-                  style={[
-                    tw`flex-row items-center gap-2 px-3 py-2 rounded-2xl self-start`,
-                    { backgroundColor: dyn.secondaryContainer },
-                  ]}
-                >
-                  <SymbolView
-                    name="checkmark.circle.fill"
-                    size={14}
-                    tintColor={dyn.onSecondaryContainer as string}
-                  />
-                  <Text style={[tw`text-sm font-semibold`, { color: dyn.onSecondaryContainer }]}>
-                    Session active
-                  </Text>
-                </View>
-                <Text style={[tw`text-xs`, { color: dyn.onSurfaceVariant }]}>
-                  Session ID: {tiktokSessionId.slice(0, 8)}•••
-                </Text>
-                <Pressable
-                  onPress={handleLogout}
-                  style={({ pressed }) => [
-                    tw`flex-row items-center gap-2 px-4 py-2.5 rounded-2xl self-start`,
-                    { backgroundColor: pressed ? dyn.errorContainer : dyn.surfaceContainerHigh },
-                  ]}
-                >
-                  <SymbolView name="rectangle.portrait.and.arrow.right" size={15} tintColor={dyn.error as string} />
-                  <Text style={[tw`text-sm font-semibold`, { color: dyn.error }]}>Sign Out</Text>
-                </Pressable>
-              </View>
-            ) : (
-              <View style={tw`gap-3`}>
-                <Text style={[tw`text-sm`, { color: dyn.onSurfaceVariant }]}>
-                  Sign in to enable private video downloads and profile sync.
-                </Text>
-                <View
-                  style={[
-                    tw`flex-row items-start gap-2 p-3 rounded-2xl`,
-                    { backgroundColor: dyn.tertiaryContainer ?? dyn.surfaceContainerHigh },
-                  ]}
-                >
-                  <SymbolView
-                    name="info.circle.fill"
-                    size={14}
-                    tintColor={dyn.onTertiaryContainer as string ?? dyn.onSurfaceVariant as string}
-                  />
-                  <Text style={[tw`text-xs flex-1 leading-4`, { color: dyn.onSurfaceVariant }]}>
-                    Only email & password login works — phone number and Google/Apple sign-in cannot be captured.
-                  </Text>
-                </View>
-                <Pressable
-                  onPress={() => router.push("/tiktok-login")}
-                  style={({ pressed }) => [
-                    tw`flex-row items-center justify-center gap-2 py-3 rounded-2xl`,
-                    { backgroundColor: pressed ? dyn.primaryContainer : dyn.primary },
-                  ]}
-                >
-                  <SymbolView name="person.crop.circle.badge.plus" size={18} tintColor={dyn.onPrimary as string} />
-                  <Text style={[tw`text-sm font-bold`, { color: dyn.onPrimary }]}>
-                    Sign in with TikTok
-                  </Text>
-                </Pressable>
-              </View>
-            )}
-          </View>
+          {/* TikTok Account Section — login flow disabled (needs dev build) */}
 
           {/* Downloads Section */}
           <View style={tw`p-4 border-b border-gray-100/10`}>
@@ -188,10 +100,10 @@ export default function Settings() {
                 },
               ]}
             >
-              <SymbolView
-                name="folder.fill"
+              <MaterialCommunityIcons
+                name="folder"
                 size={18}
-                tintColor={dyn.onPrimaryContainer as string}
+                color={dyn.onPrimaryContainer as string}
               />
               <Text
                 style={[
@@ -232,10 +144,10 @@ export default function Settings() {
                 },
               ]}
             >
-              <SymbolView
-                name="trash.fill"
+              <MaterialCommunityIcons
+                name="delete"
                 size={16}
-                tintColor={dyn.onError as string}
+                color={dyn.onError as string}
               />
               <Text
                 style={[tw`ml-2 text-sm font-bold`, { color: dyn.onError }]}
@@ -245,27 +157,94 @@ export default function Settings() {
             </Pressable>
           </View>
 
+          {/* Contact Section */}
+          <Pressable
+            onPress={() => Linking.openURL("https://github.com/heisdezz/dl")}
+            style={({ pressed }) => [
+              tw`p-4 flex-row items-center justify-between border-b border-gray-100/10`,
+              {
+                backgroundColor: pressed
+                  ? dyn.surfaceContainerHigh
+                  : "transparent",
+              },
+            ]}
+          >
+            <View style={tw`flex-row items-center gap-3`}>
+              <MaterialCommunityIcons
+                name="github"
+                size={20}
+                color={dyn.onSurfaceVariant as string}
+              />
+              <Text
+                style={[tw`text-base font-medium`, { color: dyn.onSurface }]}
+              >
+                GitHub
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={14}
+              color={dyn.onSurfaceVariant as string}
+            />
+          </Pressable>
+
+          <Pressable
+            onPress={() => Linking.openURL("mailto:ilucide08@gmail.com")}
+            style={({ pressed }) => [
+              tw`p-4 flex-row items-center justify-between border-b border-gray-100/10`,
+              {
+                backgroundColor: pressed
+                  ? dyn.surfaceContainerHigh
+                  : "transparent",
+              },
+            ]}
+          >
+            <View style={tw`flex-row items-center gap-3`}>
+              <MaterialCommunityIcons
+                name="email-outline"
+                size={20}
+                color={dyn.onSurfaceVariant as string}
+              />
+              <Text
+                style={[tw`text-base font-medium`, { color: dyn.onSurface }]}
+              >
+                Contact Support
+              </Text>
+            </View>
+            <MaterialCommunityIcons
+              name="chevron-right"
+              size={14}
+              color={dyn.onSurfaceVariant as string}
+            />
+          </Pressable>
+
           <Pressable
             onPress={() => router.push("/logs")}
             style={({ pressed }) => [
               tw`p-4 flex-row items-center justify-between border-b border-gray-100/10`,
-              { backgroundColor: pressed ? dyn.surfaceContainerHigh : "transparent" },
+              {
+                backgroundColor: pressed
+                  ? dyn.surfaceContainerHigh
+                  : "transparent",
+              },
             ]}
           >
             <View style={tw`flex-row items-center gap-3`}>
-              <SymbolView
-                name="list.bullet.clipboard.fill"
+              <MaterialCommunityIcons
+                name="clipboard-text"
                 size={20}
-                tintColor={dyn.onSurfaceVariant as string}
+                color={dyn.onSurfaceVariant as string}
               />
-              <Text style={[tw`text-base font-medium`, { color: dyn.onSurface }]}>
+              <Text
+                style={[tw`text-base font-medium`, { color: dyn.onSurface }]}
+              >
                 Logs
               </Text>
             </View>
-            <SymbolView
-              name="chevron.right"
+            <MaterialCommunityIcons
+              name="chevron-right"
               size={14}
-              tintColor={dyn.onSurfaceVariant as string}
+              color={dyn.onSurfaceVariant as string}
             />
           </Pressable>
 

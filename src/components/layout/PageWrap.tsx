@@ -1,6 +1,5 @@
 import React from "react";
 import { Color } from "expo-router";
-import { Host } from "@expo/ui";
 import { PropsWithChildren } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -12,7 +11,7 @@ export default function PageWrap({ children }: PropsWithChildren) {
       edges={["top"]}
       style={{ flex: 1, backgroundColor: dyn.background }}
     >
-      <Host style={{ flex: 1 }}>{children}</Host>
+      {children}
     </SafeAreaView>
   );
 }

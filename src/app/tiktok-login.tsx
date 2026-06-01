@@ -2,35 +2,32 @@ import React, { useRef, useState } from "react";
 import { View, Text, Pressable, ActivityIndicator } from "react-native";
 import { useRouter, Color } from "expo-router";
 import { WebView } from "react-native-webview";
-import CookieManager from "@react-native-cookies/cookies";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { SymbolView } from "expo-symbols";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { tw } from "@/lib/tw";
 import { useSessionStore } from "@/lib/session";
 import { Logger } from "@/lib/logger";
 
 const dyn = Color.android.dynamic;
 
-const LOGIN_URL =
-  "https://www.tiktok.com/login/phone-or-email/email";
+const LOGIN_URL = "https://www.tiktok.com/login/phone-or-email/email";
 
 const SESSION_KEYS = ["sessionid", "sessionid_ss", "sid_tt", "uid_tt"];
 
-async function extractSession(url: string): Promise<string | null> {
-  try {
-    const cookies = await CookieManager.get(url);
-    for (const key of SESSION_KEYS) {
-      if (cookies[key]?.value) {
-        Logger.info("session cookie found", { key });
-        return cookies[key].value;
-      }
+const INJECT_COOKIES = `
+(function() {
+  var pairs = document.cookie.split(';');
+  var cookies = {};
+  pairs.forEach(function(p) {
+    var idx = p.indexOf('=');
+    if (idx > -1) {
+      cookies[p.slice(0, idx).trim()] = p.slice(idx + 1).trim();
     }
-    return null;
-  } catch (e) {
-    Logger.warn("cookie extraction failed", { error: String(e) });
-    return null;
-  }
-}
+  });
+  window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'cookies', data: cookies }));
+})();
+true;
+`;
 
 export default function TikTokLogin() {
   const router = useRouter();
@@ -40,25 +37,35 @@ export default function TikTokLogin() {
   const [capturing, setCapturing] = useState(false);
   const webViewRef = useRef<WebView>(null);
 
-  const tryCapture = async (url: string) => {
+  const tryCapture = (url: string) => {
     if (capturing) return;
-    // Only attempt capture once user is on the main TikTok feed (post-login)
     const isLoggedIn =
       /tiktok\.com\/(foryou|following|explore|@|$)/.test(url) &&
       !url.includes("/login");
-
     if (!isLoggedIn) return;
 
     setCapturing(true);
-    Logger.info("login detected, extracting cookies", { url });
+    Logger.info("login detected, injecting cookie extractor", { url });
+    webViewRef.current?.injectJavaScript(INJECT_COOKIES);
+  };
 
-    const sessionId = await extractSession("https://www.tiktok.com");
-    if (sessionId) {
-      setTiktokSessionId(sessionId);
-      Logger.info("session stored successfully");
-      router.back();
-    } else {
-      Logger.warn("no session cookie found after login");
+  const onMessage = (event: { nativeEvent: { data: string } }) => {
+    try {
+      const msg = JSON.parse(event.nativeEvent.data);
+      if (msg.type !== "cookies") return;
+      const cookies: Record<string, string> = msg.data ?? {};
+      Logger.info("cookies received", { keys: Object.keys(cookies) });
+      for (const key of SESSION_KEYS) {
+        if (cookies[key]) {
+          setTiktokSessionId(cookies[key]);
+          Logger.info("session stored", { key });
+          router.back();
+          return;
+        }
+      }
+      Logger.warn("sessionid not in document.cookie — likely HttpOnly");
+      setCapturing(false);
+    } catch {
       setCapturing(false);
     }
   };
@@ -69,17 +76,29 @@ export default function TikTokLogin() {
       <View
         style={[
           tw`flex-row items-center px-4 gap-3`,
-          { paddingTop: insets.top + 8, paddingBottom: 12, backgroundColor: dyn.surface },
+          {
+            paddingTop: insets.top + 8,
+            paddingBottom: 12,
+            backgroundColor: dyn.surface,
+          },
         ]}
       >
         <Pressable
           onPress={() => router.back()}
           style={({ pressed }) => [
             tw`w-10 h-10 rounded-full items-center justify-center`,
-            { backgroundColor: pressed ? dyn.surfaceVariant : dyn.surfaceContainerHigh },
+            {
+              backgroundColor: pressed
+                ? dyn.surfaceVariant
+                : dyn.surfaceContainerHigh,
+            },
           ]}
         >
-          <SymbolView name="xmark" size={16} tintColor={dyn.onSurface as string} />
+          <MaterialCommunityIcons
+            name="close"
+            size={16}
+            color={dyn.onSurface as string}
+          />
         </Pressable>
 
         <View style={tw`flex-1`}>
@@ -103,8 +122,13 @@ export default function TikTokLogin() {
             { backgroundColor: dyn.primaryContainer },
           ]}
         >
-          <ActivityIndicator size="small" color={dyn.onPrimaryContainer as string} />
-          <Text style={[tw`text-sm font-medium`, { color: dyn.onPrimaryContainer }]}>
+          <ActivityIndicator
+            size="small"
+            color={dyn.onPrimaryContainer as string}
+          />
+          <Text
+            style={[tw`text-sm font-medium`, { color: dyn.onPrimaryContainer }]}
+          >
             Capturing session…
           </Text>
         </View>
@@ -119,6 +143,7 @@ export default function TikTokLogin() {
         onNavigationStateChange={(nav) => {
           if (nav.url) tryCapture(nav.url);
         }}
+        onMessage={onMessage}
         sharedCookiesEnabled
         thirdPartyCookiesEnabled
         javaScriptEnabled

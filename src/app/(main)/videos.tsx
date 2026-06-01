@@ -11,13 +11,9 @@ import PageWrap from "@/components/layout/PageWrap";
 import { tw } from "@/lib/tw";
 import { Color } from "expo-router";
 import { deleteAsync } from "expo-file-system/legacy";
-import {
-  useHistoryStore,
-  useFilteredHistory,
-  SortOrder,
-} from "@/lib/history";
+import { useHistoryStore, useFilteredHistory, SortOrder } from "@/lib/history";
 import { HistoryCard } from "@/components/history-card";
-import { SymbolView } from "expo-symbols";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 const dyn = Color.android.dynamic;
 
@@ -54,9 +50,7 @@ export default function Videos() {
   };
 
   const isFiltered =
-    filter.query.trim() !== "" ||
-    filter.localOnly ||
-    filter.sort !== "newest";
+    filter.query.trim() !== "" || filter.localOnly || filter.sort !== "newest";
 
   return (
     <PageWrap>
@@ -80,10 +74,18 @@ export default function Videos() {
                 onPress={resetFilter}
                 style={({ pressed }) => [
                   tw`p-2 rounded-full`,
-                  { backgroundColor: pressed ? dyn.secondaryContainer : dyn.surfaceContainerHigh },
+                  {
+                    backgroundColor: pressed
+                      ? dyn.secondaryContainer
+                      : dyn.surfaceContainerHigh,
+                  },
                 ]}
               >
-                <SymbolView name="xmark" size={16} tintColor={dyn.onSurface as string} />
+                <MaterialCommunityIcons
+                  name="close"
+                  size={16}
+                  color={dyn.onSurface as string}
+                />
               </Pressable>
             )}
             {allHistory.length > 0 && (
@@ -91,10 +93,18 @@ export default function Videos() {
                 onPress={handleClearAll}
                 style={({ pressed }) => [
                   tw`p-2 rounded-full`,
-                  { backgroundColor: pressed ? dyn.errorContainer : "transparent" },
+                  {
+                    backgroundColor: pressed
+                      ? dyn.errorContainer
+                      : "transparent",
+                  },
                 ]}
               >
-                <SymbolView name="trash" size={20} tintColor={dyn.error as string} />
+                <MaterialCommunityIcons
+                  name="delete"
+                  size={20}
+                  color={dyn.error as string}
+                />
               </Pressable>
             )}
           </View>
@@ -109,10 +119,10 @@ export default function Videos() {
                 { backgroundColor: dyn.surfaceContainerHigh },
               ]}
             >
-              <SymbolView
-                name="magnifyingglass"
+              <MaterialCommunityIcons
+                name="magnify"
                 size={16}
-                tintColor={dyn.onSurfaceVariant as string}
+                color={dyn.onSurfaceVariant as string}
               />
               <TextInput
                 value={filter.query}
@@ -126,10 +136,10 @@ export default function Videos() {
               />
               {filter.query.length > 0 && (
                 <Pressable onPress={() => setFilter({ query: "" })} hitSlop={8}>
-                  <SymbolView
-                    name="xmark.circle.fill"
+                  <MaterialCommunityIcons
+                    name="close-circle"
                     size={16}
-                    tintColor={dyn.onSurfaceVariant as string}
+                    color={dyn.onSurfaceVariant as string}
                   />
                 </Pressable>
               )}
@@ -179,10 +189,10 @@ export default function Videos() {
                   },
                 ]}
               >
-                <SymbolView
-                  name="arrow.down.circle.fill"
+                <MaterialCommunityIcons
+                  name="download-circle"
                   size={12}
-                  tintColor={
+                  color={
                     (filter.localOnly
                       ? dyn.onPrimaryContainer
                       : dyn.onSurfaceVariant) as string
@@ -207,10 +217,12 @@ export default function Videos() {
 
         {filtered.length === 0 ? (
           <View style={tw`flex-1 items-center justify-center gap-3`}>
-            <SymbolView
-              name={allHistory.length === 0 ? "arrow.down.circle" : "magnifyingglass"}
+            <MaterialCommunityIcons
+              name={
+                allHistory.length === 0 ? "download-circle-outline" : "magnify"
+              }
               size={48}
-              tintColor={dyn.onSurfaceVariant as string}
+              color={dyn.onSurfaceVariant as string}
             />
             <Text style={[tw`text-base`, { color: dyn.onSurfaceVariant }]}>
               {allHistory.length === 0 ? "No downloads yet" : "No results"}

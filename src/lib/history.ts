@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import { create } from "zustand";
+import { deleteAsync } from "expo-file-system/legacy";
 import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { TikTokMetadata } from "./tiktok";
@@ -25,6 +26,7 @@ interface HistoryState {
   filter: HistoryFilter;
   addItem: (item: TikTokMetadata, localUri?: string) => void;
   removeItem: (id: string) => void;
+  deleteItem: (id: string) => Promise<void>;
   clearHistory: () => void;
   setDownloadPath: (path: string | null) => void;
   setFilter: (patch: Partial<HistoryFilter>) => void;
@@ -51,6 +53,15 @@ export const useHistoryStore = create<HistoryState>()(
         set((state) => ({
           history: state.history.filter((h) => h.id !== id),
         })),
+      deleteItem: async (id) => {
+        const item = useHistoryStore.getState().history.find((h) => h.id === id);
+        if (item?.localUri) {
+          await deleteAsync(item.localUri, { idempotent: true }).catch(() => {});
+        }
+        set((state) => ({
+          history: state.history.filter((h) => h.id !== id),
+        }));
+      },
       clearHistory: () => set({ history: [] }),
       setDownloadPath: (path) => set({ downloadPath: path }),
       setFilter: (patch) =>

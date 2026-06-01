@@ -11,7 +11,7 @@ import { tw } from "@/lib/tw";
 import { Color } from "expo-router";
 import { getTikTokMetadata, fetchVideoViaTikDown } from "@/lib/tiktok";
 import { VideoCard } from "@/components/video-card";
-import { SymbolView } from "expo-symbols";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useSessionStore } from "@/lib/session";
 
@@ -80,10 +80,10 @@ export default function Index() {
             {isLoading ? (
               <ActivityIndicator size="small" color={dyn.onPrimaryContainer} />
             ) : (
-              <SymbolView
-                name="arrow.down.circle.fill"
+              <MaterialCommunityIcons
+                name="download-circle"
                 size={24}
-                tintColor={dyn.onPrimaryContainer as string}
+                color={dyn.onPrimaryContainer as string}
               />
             )}
           </Pressable>
