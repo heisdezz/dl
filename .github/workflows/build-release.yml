@@ -3,13 +3,15 @@ name: Build Release APK
 on:
   push:
     branches:
-      - main
+      - dev
   workflow_dispatch:
 
 jobs:
   build:
     name: Build Android Release APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -36,7 +38,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.gradle/caches
+            ~ ~/.gradle/caches
             ~/.gradle/wrapper
           key: gradle-release-${{ runner.os }}-${{ hashFiles('bun.lock') }}
           restore-keys: gradle-release-${{ runner.os }}-
@@ -74,3 +76,15 @@ jobs:
           name: tik-down-release-${{ github.sha }}
           path: android/app/build/outputs/apk/release/app-release.apk
           retention-days: 30
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        if: github.ref == 'refs/heads/dev'
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          files: android/app/build/outputs/apk/release/app-release.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
