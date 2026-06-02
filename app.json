@@ -10,10 +10,10 @@
     "userInterfaceStyle": "dark",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.anonymous.dev"
+      "bundleIdentifier": "com.ilucide.tkdown"
     },
     "android": {
-      "package": "com.anonymous.dev",
+      "package": "com.ilucide.tkdown",
       "adaptiveIcon": {
         "backgroundColor": "#D3E4FF",
         "foregroundImage": "./assets/images/new_logo.png",
