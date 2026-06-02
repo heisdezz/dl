@@ -9,21 +9,22 @@
     "backgroundColor": "#1C1B1F",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.anonymous.dev"
     },
     "android": {
       "package": "com.anonymous.dev",
       "adaptiveIcon": {
         "backgroundColor": "#D3E4FF",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
+        "foregroundImage": "./assets/images/new_logo.png",
+        "backgroundImage": "./assets/images/new_logo.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/new_logo.png"
     },
     "plugins": [
       "expo-router",
@@ -32,7 +33,7 @@
         {
           "backgroundColor": "#1C1B1F",
           "android": {
-            "image": "./assets/images/splash-icon.png",
+            "image": "./assets/images/new_logo.png",
             "imageWidth": 120
           }
         }
